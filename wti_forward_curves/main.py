@@ -31,23 +31,17 @@ def format_pair_label(pair_str):
         return f"{month_code1}{year1}-{month_code2}{year2}"
     return pair_str
 
-print("Chargement des données...")
-
 df_oil = load_oil_data()
 current_curve = get_current_curve(df_oil)
 roll_yield = calculate_roll_yield(df_oil)
 
 if df_oil is None or len(df_oil) == 0:
-    print("No data available")
+    pass
 else:
     if current_curve is not None and len(current_curve) > 0:
         common_date = df_oil.index[-1]
         target_date = common_date - pd.DateOffset(months=1)
         previous_curve, previous_date = get_previous_month_curve(df_oil, target_date)
-        
-        print(f"Date commune utilisée pour la courbe forward: {common_date.strftime('%Y-%m-%d')}")
-        if previous_date is not None:
-            print(f"Date commune -1M: {previous_date.strftime('%Y-%m-%d')}")
         
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=False)
         
@@ -81,4 +75,4 @@ else:
         plt.tight_layout()
         plt.show()
     else:
-        print("Current curve data not available")
+        pass

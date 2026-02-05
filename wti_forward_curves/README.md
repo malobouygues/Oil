@@ -1,6 +1,6 @@
 # WTI Futures Term Structure Analysis
 
-**Objective:** To quantify the economic incentive for storage (contango) or depletion (backwardation), by analyzing the WTI Term Structure.
+**Question:** Does the forward curve implied yield incentivize storage (contango) or destocking (backwardation)?
 
 ## 1. Context & Rationale
 
@@ -17,77 +17,53 @@ The spot price is often noise driven by geopolitical headlines, while the real f
 
 My focus shifted from simple price plotting to calculating the implied yield of the curve. This required handling the specific mathematical and operational nuances of energy futures.
 
-## 3. Instrument Specifications
+### A. Physical Futures Specs
 
-The model isolates the "Cash & Carry" signal by tracking the spread between the two most liquid maturities on the curve.
+I used the CME Group Light Sweet Crude Oil contract:
 
-- **Leg 1: The Spot Proxy (M1)**
-  
-  Represents the immediate physical tightness of the market.
-  
-  **Benchmark:** West Texas Intermediate (WTI) Light Sweet Crude Oil.
-  **Delivery:** FOB at Cushing, Oklahoma (Pipeline & Storage Hub).
-  **Sulfur:** < 0.42% by weight (Sweet).
-  **Instrument:** CME Group (NYMEX) WTI Crude Oil Futures (CL).
-  
-- **Leg 2: The Storage Proxy (M2)**
-  
-  Represents the future value of the barrel. Used to calculate the market's implied cost of carry.
-  
-  **Logic:** If M2 > M1 (Contango), the market pays for storage.
-  **Data Logic:** Dynamic rolling ticker (e.g., if M1 is `CLZ25`, M2 is automatically `CLF26`).
-  **Exchange:** NYMEX (New York Mercantile Exchange).
-
-**Source:** CME Group (Physical Contract Specs)
+- West Texas Intermediate (WTI), FOB Cushing, Oklahoma
+- Ticker: CL
+- Exchange: NYMEX (New York Mercantile Exchange)
 
 https://www.cmegroup.com/markets/energy/crude-oil/light-sweet-crude.contractSpecs.html
 
-### A. The "Dollar Bias" (Normalization)
+**Logic:** Dynamic rolling ticker (if M1 is `CLZ2025`, M2 is automatically `CLF2026` the last quoted date)
 
-My first iteration calculated the spread in absolute dollars (Month 1 - Month 2).
+### B. The Dollar Normalization
 
-**The Problem:** A $0.50 spread is structurally significant when Oil is at $40/bbl (1.25%), but negligible when Oil is at $100/bbl (0.5%). High-price environments were distorting the signal.
+My first version calculated the spread in absolute dollars (Month 1 - Month 2).
 
-**The Fix:** I refactored the logic to calculate Percentage Roll Yield.
+**Problem:** $0.50 spread is structurally significant when Oil is at $40/bbl (1.25%), but negligible when Oil is at $100/bbl (0.5%) -> ie. high price environments distort the signal
+
+**Solution:** I refactored the logic to calculate Roll Yield in percentage
 
 ```
 Yield = (Price_Front - Price_Next) / Price_Front
 ```
 
-**Result:** This standardizes the signal across different price regimes, allowing for a fair historical comparison of market tightness.
+**Result:** It gives fair historical comparison of market tightness.
 
-### B. Interpreting the Signal (Merchant Logic)
+### C. Interpretation
 
-The code distinguishes two market states based on the calculated yield:
+- **Positive yield (backwardation):** front > next, ie. the market is tight and signals immediate physical demand
 
-- **Positive Yield (Backwardation):** Front > Next. This is a scarcity signal. The market is "tight" and penalizes anyone holding inventory. It signals immediate physical demand.
+- **Negative yield (contango):** front < next, the negative yield represents the cost of carry (case of contango deep enough, it opens a cash & carry arbitrage window appears)
 
-- **Negative Yield (Contango):** Front < Next. This is an oversupply signal. The negative yield represents the "Cost of Carry" (Storage + Finance + Insurance). If the Contango is deep enough, it opens the "Cash & Carry" arbitrage window.
+### D. Delivery Risk (Front Month Logic)
 
-### C. Operational Safety: Dynamic "Front Month" Logic
+Hardcoding tickers (ie. fixed CLZ2025) guarantees the code will break or analyze expired data
 
-Unlike stocks, oil contracts expire monthly. Hardcoding tickers (e.g., CLZ2025) guarantees the code will break or analyze expired data.
+**Risk:** To analyze a contract that has entered the delivery period or has zero liquidity
 
-**The Risk:** Analyzing a contract that has entered the delivery period or has zero liquidity.
+**Solution:** I coded a rolling window algorithm: it dynamically generates the ticker symbols for the next 12 months based on the current date
 
-**The Solution:** The script (CL_futures_dwnld.py) implements a Rolling Window. It dynamically generates the ticker symbols for the next 12 months based on the current system date.
+Front month (M1) is always the liquid, active contract, mirroring the execution reality of a rolling position.
 
-**Impact:** This ensures the "Front Month" (M1) is always the liquid, active contract, mirroring the execution reality of a trader rolling positions.
+## 3. Technical Stack
 
-## 3. Technical Implementation
-
-This tool focuses on efficient data serialization and clear visualization of the term structure.
-
-- **Language:** Python 3.9+
-
-- **Data Acquisition:** tvDatafeed (TradingView API).
-
-  **Reasoning:** NYMEX data is expensive. This wrapper allows access to delayed futures data sufficient for End-of-Day curve construction without scraping errors.
-
-- **Core Libraries:**
-
-  - **Pandas:** Used for time-series alignment and vectorizing the yield calculation across the curve.
-
-  - **Matplotlib:** Dual-plot visualization (Curve Shape vs. Bar Chart Yields) to correlate price levels with structural incentives.
-
-- **Architecture:** Modular design separating the data fetcher (dwnld), the calculation engine (curves.py), and the visualization (main.py).
+- **Language**: Python 3.9+
+- **Data**: tvDatafeed (TradingView API)
+- **Core Libraries**:
+  - **Pandas**: Used for time-series alignment and vectorizing the yield calculation across the curve
+  - **Matplotlib:** Dual-plot visualization (curve and bar chart)
+- **Data**: Local CSV serialization with ISO dates

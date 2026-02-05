@@ -132,7 +132,5 @@ def calculate_volume_rolling_spread():
     rolling_window = 252
     df_result['rolling_mean'] = df_result['spread'].rolling(window=rolling_window, min_periods=1).mean()
     df_result['rolling_std'] = df_result['spread'].rolling(window=rolling_window, min_periods=1).std()
-    df_result['z_score'] = (df_result['spread'] - df_result['rolling_mean']) / df_result['rolling_std'].replace(0, np.nan)
-    df_result['z_score'] = df_result['z_score'].fillna(0)
     
     return df_result
