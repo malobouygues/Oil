@@ -17,6 +17,22 @@ def get_current_curve(df_oil):
     current_curve = latest_row.dropna()
     return current_curve
 
+def get_previous_month_curve(df_oil, target_date):
+    available_cols = [col for col in df_oil.columns if df_oil[col].notna().any()]
+    if len(available_cols) == 0:
+        return None, None
+    
+    df_before_target = df_oil[df_oil.index <= target_date]
+    
+    if len(df_before_target) == 0:
+        return None, None
+    
+    previous_date = df_before_target.index.max()
+    previous_row = df_before_target[available_cols].loc[previous_date]
+    previous_curve = previous_row.dropna()
+    
+    return previous_curve, previous_date
+
 def calculate_roll_yield(df_oil):
     available_cols = [col for col in df_oil.columns if df_oil[col].notna().any()]
     if len(available_cols) < 2:

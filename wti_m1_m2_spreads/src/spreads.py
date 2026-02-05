@@ -48,10 +48,8 @@ def calculate_volume_rolling_spread():
     if len(contracts_info) < 2:
         return None
     
-    last_two_contracts = contracts_info[-2:]
-    
     contracts_data = {}
-    for contract in last_two_contracts:
+    for contract in contracts_info:
         df = load_contract_data(contract['filename'])
         if not df.empty:
             contracts_data[contract['ticker']] = df.set_index('date')
@@ -59,36 +57,72 @@ def calculate_volume_rolling_spread():
     if len(contracts_data) < 2:
         return None
     
-    contract_tickers = [c['ticker'] for c in last_two_contracts if c['ticker'] in contracts_data]
+    all_dates = set()
+    for df in contracts_data.values():
+        all_dates.update(df.index)
     
-    if len(contract_tickers) < 2:
+    date_range = pd.date_range(start=start_date, end=pd.to_datetime(datetime.now()), freq='D')
+    date_range = date_range[date_range.isin(all_dates)]
+    
+    if len(date_range) == 0:
         return None
     
-    m1_ticker = contract_tickers[0]
-    m2_ticker = contract_tickers[1]
+    first_two_contracts = contracts_info[:2]
+    current_m1_ticker = first_two_contracts[0]['ticker']
+    current_m2_ticker = first_two_contracts[1]['ticker']
     
-    df_m1 = contracts_data[m1_ticker]
-    df_m2 = contracts_data[m2_ticker]
+    if current_m1_ticker not in contracts_data or current_m2_ticker not in contracts_data:
+        return None
     
-    min_date = max(df_m1.index.min(), df_m2.index.min())
-    max_date = min(df_m1.index.max(), df_m2.index.max(), pd.to_datetime(datetime.now()))
+    ticker_to_index = {c['ticker']: i for i, c in enumerate(contracts_info)}
     
-    date_range = pd.date_range(start=min_date, end=max_date, freq='D')
     df_result = pd.DataFrame(index=date_range)
     df_result['spread'] = np.nan
-    df_result['active_m1'] = m1_ticker
-    df_result['active_m2'] = m2_ticker
+    df_result['active_m1'] = ''
+    df_result['active_m2'] = ''
     
     for date in date_range:
-        if date not in df_m1.index or date not in df_m2.index:
+        if (current_m1_ticker not in contracts_data or 
+            current_m2_ticker not in contracts_data or
+            date not in contracts_data[current_m1_ticker].index or
+            date not in contracts_data[current_m2_ticker].index):
             continue
         
+        df_m1 = contracts_data[current_m1_ticker]
+        df_m2 = contracts_data[current_m2_ticker]
+        
+        volume_m1 = df_m1.loc[date, 'volume']
+        volume_m2 = df_m2.loc[date, 'volume']
         close_m1 = df_m1.loc[date, 'close']
         close_m2 = df_m2.loc[date, 'close']
         
-        if pd.notna(close_m1) and pd.notna(close_m2):
-            spread = close_m1 - close_m2
-            df_result.loc[date, 'spread'] = spread
+        if pd.isna(volume_m1) or pd.isna(volume_m2) or pd.isna(close_m1) or pd.isna(close_m2):
+            continue
+        
+        day_of_month = date.day
+        should_roll = (volume_m2 > volume_m1) and (day_of_month >= 13)
+        
+        if should_roll:
+            current_m2_idx = ticker_to_index.get(current_m2_ticker)
+            
+            if current_m2_idx is not None:
+                next_m1_idx = current_m2_idx + 1
+                
+                if next_m1_idx < len(contracts_info):
+                    next_m1_ticker = contracts_info[next_m1_idx]['ticker']
+                    if (next_m1_ticker in contracts_data and 
+                        date in contracts_data[next_m1_ticker].index):
+                        current_m1_ticker = current_m2_ticker
+                        current_m2_ticker = next_m1_ticker
+                        df_m1 = contracts_data[current_m1_ticker]
+                        df_m2 = contracts_data[current_m2_ticker]
+                        close_m1 = df_m1.loc[date, 'close']
+                        close_m2 = df_m2.loc[date, 'close']
+        
+        spread = close_m1 - close_m2
+        df_result.loc[date, 'spread'] = spread
+        df_result.loc[date, 'active_m1'] = current_m1_ticker
+        df_result.loc[date, 'active_m2'] = current_m2_ticker
     
     df_result = df_result.dropna(subset=['spread'])
     

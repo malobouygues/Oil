@@ -36,3 +36,13 @@ build/
 # Environment variables
 .env
 .env.local
+
+# Images folders
+images/
+**/images/
+
+# Project folders
+transatlantic_arbitrage/README copy.md
+transatlantic_arbitrage/data/
+transatlantic_arbitrage/main.py
+transatlantic_arbitrage/src/

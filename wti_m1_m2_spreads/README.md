@@ -12,7 +12,7 @@ While the Forward Curve (Project 1) gives a snapshot, traders need to know if th
 
 **The Pivot** Initially, I treated WTI like a stock index. I quickly found that looking at a non-adjusted continuous chart created false breakout signals every 20th of the month due to the expiry roll. **Rationale:** To get a clean signal, I needed to engineer a "Continuous Contract" that mimics the actual behavior of a trader rolling their position based on liquidity, not just the calendar.
 
-## 2. Adapting the Code to Market Realities (Evolution of Logic)
+## 2. Building the Model (How My Thinking Evolved)
 
 The core value of this code lies in how it handles the transition between contracts to preserve data integrity.
 

@@ -1,23 +1,46 @@
-# WTI Term Structure and Roll Yield Analysis
+# WTI Futures Term Structure Analysis
 
-This project monitors the WTI Crude Oil (NYMEX) Forward Curve to extract fundamental supply/demand signals.
-
-**Objective:** To answer the critical question for physical inventory management: Is the market incentivizing storage (Contango) or demanding immediate release of barrels (Backwardation)?
+**Objective:** To quantify the economic incentive for storage (contango) or depletion (backwardation), by analyzing the WTI Term Structure.
 
 ## 1. Context & Rationale
 
-Retail traders often obsess over "Flat Price" (e.g., "$75/bbl"). However, for a physical operator or a refinery, the spot price is often noise driven by geopolitical headlines. The real fundamental signal lies in the shape of the curve.
+The spot price is often noise driven by geopolitical headlines, while the real fundamental signal lies in the shape of the curve.
 
-**The Objective** I wanted to build a dashboard that ignores the noise of daily price fluctuation to focus on the structure.
+**The Objective** I wanted to isolate the noise of daily price fluctuation to focus on the structure; to see what narriative the market is pricing today.
 
 - **Contango:** The market pays you to store oil.
 - **Backwardation:** The market charges you a premium to hold oil (or pays you to sell it now).
 
-**The Pivot** Initially, I looked at the curve visually. I realized this was insufficient. A visual "steepness" is subjective. I needed to quantify the Roll Yield—the theoretical P&L of holding a position as contracts roll closer to expiry.
+**** Initially, I looked at the curve visually. I realized this was insufficient. A visual "steepness" is subjective. I needed to quantify the Roll Yield—the theoretical P&L of holding a position as contracts roll closer to expiry.
 
-## 2. Adapting the Code to Market Realities (Evolution of Logic)
+## 2. Building the Model (How My Thinking Evolved)
 
 My focus shifted from simple price plotting to calculating the implied yield of the curve. This required handling the specific mathematical and operational nuances of energy futures.
+
+## 3. Instrument Specifications
+
+The model isolates the "Cash & Carry" signal by tracking the spread between the two most liquid maturities on the curve.
+
+- **Leg 1: The Spot Proxy (M1)**
+  
+  Represents the immediate physical tightness of the market.
+  
+  **Benchmark:** West Texas Intermediate (WTI) Light Sweet Crude Oil.
+  **Delivery:** FOB at Cushing, Oklahoma (Pipeline & Storage Hub).
+  **Sulfur:** < 0.42% by weight (Sweet).
+  **Instrument:** CME Group (NYMEX) WTI Crude Oil Futures (CL).
+  
+- **Leg 2: The Storage Proxy (M2)**
+  
+  Represents the future value of the barrel. Used to calculate the market's implied cost of carry.
+  
+  **Logic:** If M2 > M1 (Contango), the market pays for storage.
+  **Data Logic:** Dynamic rolling ticker (e.g., if M1 is `CLZ25`, M2 is automatically `CLF26`).
+  **Exchange:** NYMEX (New York Mercantile Exchange).
+
+**Source:** CME Group (Physical Contract Specs)
+
+https://www.cmegroup.com/markets/energy/crude-oil/light-sweet-crude.contractSpecs.html
 
 ### A. The "Dollar Bias" (Normalization)
 
