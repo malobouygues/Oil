@@ -1,6 +1,6 @@
 ## Project n°1: WTI Futures Term Structure Analysis
 
-**Question**: Is the market structure incentivizing storage (Contango) or demanding immediate inventory release (Backwardation)?
+**Question**: Is the market structure incentivizing storage (contango) or demanding immediate inventory release (backwardation)?
 
 **Objective**: To visualize the WTI forward curve dynamics and to isolate the noise of daily price fluctuation to focus on the structure
 
