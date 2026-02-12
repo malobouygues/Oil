@@ -20,18 +20,7 @@ SABR produces a smooth parametric implied-vol smile via Hagan's approximation:
 - β: fixed to stabilize calibration
 
 SABR implied volatility surface (3D)
-The figure below shows the SABR implied volatility surface as a function of:
-maturity 
-T
-T
-moneyness 
-K
-/
-F
-(
-T
-)
-K/F(T)
+The figure below shows the SABR implied volatility surface.
 
 <img width="638" height="477" alt="Image" src="https://github.com/user-attachments/assets/b9807fe1-4500-493d-87b1-b1d693aced7b" />
 
