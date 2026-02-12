@@ -8,7 +8,7 @@ Vanilla options pricer on WTI futures using Black76, with a SABR (Hagan lognorma
 - Calibrates SABR parameters *(α, ρ, ν)* with β fixed (desk practice)
 - Uses a unified vol API: any object providing `vol(T, K)` can feed the pricer
 
-## Model choice (short)
+## Model choice
 WTI options are options on futures, so the standard model is Black76.
 
 ## SABR (smile model)
