@@ -9,14 +9,7 @@ Vanilla options pricer on WTI futures using Black76, with a SABR (Hagan lognorma
 - Uses a unified vol API: any object providing `vol(T, K)` can feed the pricer
 
 ## Model choice (short)
-WTI options are options on futures, so the standard model is Black-76:
-
-\[
-PV = df \cdot cp \cdot \left(F N(cp\,d_1) - K N(cp\,d_2)\right)
-\]
-\[
-d_1=\frac{\ln(F/K)+\frac12\sigma^2T}{\sigma\sqrt{T}},\quad d_2=d_1-\sigma\sqrt{T}
-\]
+WTI options are options on futures, so the standard model is Black76.
 
 ## SABR (smile model)
 SABR produces a smooth parametric implied-vol smile via Hagan's approximation:
