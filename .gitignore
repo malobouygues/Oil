@@ -42,7 +42,12 @@ images/
 **/images/
 
 # Project folders
+wti_forward_curves/
 3-2-1_crack_spread/README copy.md
 3-2-1_crack_spread/data/
 3-2-1_crack_spread/main.py
-3-2-1_crack_spread/src/wti_m1_m2_spreads/
+3-2-1_crack_spread/src/
+derivatives_pricer/scripts/
+derivatives_pricer/README n°1.md
+derivatives_pricer/README n°2.md
+derivatives_pricer/test.py

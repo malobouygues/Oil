@@ -1,10 +1,10 @@
-## Project n°1: WTI Futures Term Structure Analysis
+## Project n°1: WTI Options Pricer
 
-**Question**: Is the market structure incentivizing storage (contango) or demanding immediate inventory release (backwardation)?
+Vanilla options pricer on WTI futures in Black76, with SABR volatility smile calibration.
 
-**Objective**: To visualize the WTI forward curve dynamics and to isolate the noise of daily price fluctuation to focus on the structure
+The project computes option prices and greeks from a forward curve and a volatility surface (flat, slice, or SABR interpolated by expiry).
 
-<img width="996" height="795" alt="Image" src="https://github.com/user-attachments/assets/09fb5c91-be90-4211-8273-92c5f780de35" />
+<img width="638" height="477" alt="Image" src="https://github.com/user-attachments/assets/b9807fe1-4500-493d-87b1-b1d693aced7b" />
 
 ## Project n°2: WTI M1/M2 Rolling Spread
 
