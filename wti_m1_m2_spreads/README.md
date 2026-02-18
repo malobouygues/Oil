@@ -1,46 +1,69 @@
 # WTI M1/M2 Rolling Spread
 
-This project builds a continuous, adjusted time-series of the WTI M1/M2 Spread to isolate short-term physical scarcity signals from expiration noise.
+## Project Overview
 
-**Objective:** To put in perspective the magnitude of WTI M1/M2 spread current backwardation / contango events against historical prices
+The project quantifies the economic viability of physical storage arbitrage (Cash-and-Carry) and to monitor the transition between backwardation (positive roll yield) and contango (storage cost incentives)
 
-## 1. Context & Rationale
+## Methodology
 
-While the Forward Curve (Project n°1) gives a snapshot, I wanted to find out whether the M1-M2 oil spread is cycle. The M1/M2 Spread (front month vs second month) is crucial in the physical market
+- Liquidity-adjusted roll: Dynamic transition from Front-Month (M<sub>1</sub>) to Second-Month (M<sub>2</sub>) triggered by Daily Volume Crossover (V<sub>M2</sub> > V<sub>M1</sub>)
 
-**Problem** Raw futures data is fragmented. You cannot simply download "Generic 1st Month Crude" without encountering massive price gaps when the contract expires and the data "rolls" to the next month.
+- Physical convergence filter: Pre-empts Last Trading Day (LTD) volatility (typically rolling T−7 to T−3) to exclude price decoupling driven by Cushing logistical bottlenecks rather than global supply/demand
 
-**Pivot** Initially, I treated WTI like a stock index. I quickly found that looking at a non-adjusted continuous chart created false breakout signals every 20th of the month due to the expiry roll. **Rationale:** To get a clean signal, I needed to engineer a "Continuous Contract" that mimics the actual behavior of a trader rolling their position based on liquidity, not just the calendar.
+## Benchmarks
 
-## 2. Building the Model (How My Thinking Evolved)
+**WTI Light Sweet Crude Oil**
 
-The core value of this code lies in how it handles the transition between contracts to preserve data integrity.
+- Benchmark: West Texas Intermediate (WTI)
+- Instrument: NYMEX/CME Light Sweet Crude Oil Futures (CL)
+- Logic: Dynamic front month (M<sub>1</sub>) vs second month (M<sub>2</sub>) based on volume crossover (V<sub>M2</sub> > V<sub>M1</sub>)
 
-### A. Rolling Contrat Challenge
+source: https://www.cmegroup.com/markets/energy/crude-oil/light-sweet-crude.html
 
-My first version rolled contracts on the very last day of trading, but price action decouples from global fundamentals due to physical convergence
+## Mathematical Model
 
-**Idea:** Historical data shows that Open Interest and Volume typically crossover from M1 to M2 between T-6/7 and T-3 days prior to expiration
+The continuous spread series S<sub>t</sub> is derived from the term structure of futures prices P
 
-**Solution:** I used a volume roll logic; when M2 volume > M1, it switches the active contract only when:
+### Variable Definitions
+
+- t: Current time step (daily resolution)
+- P<sub>t,n</sub>: Settlement price of the n-th nearby futures contract at time t
+- V<sub>t,n</sub>: Daily trading volume of the n-th nearby futures contract at time t
+- M<sub>1</sub>: Front-month contract index
+- M<sub>2</sub>: Second-month contract index
+
+### Roll Logic
+
+The active contract pair transitions when liquidity shifts to the deferred expiry. The roll condition R<sub>t</sub> is defined as a boolean trigger:
 
 ```
-Volume(Next) > Volume(Front)
+R_t = { 1  if V_t,M2 > V_t,M1
+      { 0  otherwise
 ```
 
-### B. Construction of the Continuous Series
+### Spread Calculation
 
-The script does not rely on continuous tickers (like CL1! on TradingView) which often smooth data
+The calendar spread S<sub>t</sub> represents the cost of carry (or scarcity premium)
 
-**Methodology:** cl_futures.py script downloads individual monthly contracts (ie. CLN2020, CLQ2020)
+**S<sub>t</sub> = P<sub>t,M1</sub> − P<sub>t,M2</sub>**
 
-spreads.py link them together using the rollout dates -> hence, a movement in price is not the consequence of low volatility and physical obligation
+Where P<sub>t,M1</sub> and P<sub>t,M2</sub> are the prices of the currently active pair determined by the roll logic state
 
-## 3. Technical Stack
+### Statistical Bounds (Bollinger Bands)
 
-- **Language**: Python 3.9+
-- **Data**: tvDatafeed (TradingView API)
-- **Core Libraries**:
-  - Loop that iterates through contract volumes at expiration, look for M2 Volume > M1 Volume (T-5 to T-10 days pre expiry)
-  - **Matplotlib:** bollinger bands (rolling mean ± 2 std dev) to visualize breakout zones
-- **Data**: Local CSV serialization with ISO dates
+To identify mean reversion or breakout signals in the spread term structure, volatility bands are calculated:
+
+- BB<sub>upper,t</sub> = μ<sub>t</sub> + k·σ<sub>t</sub>
+- BB<sub>lower,t</sub> = μ<sub>t</sub> − k·σ<sub>t</sub>
+
+Where:
+
+- μ<sub>t</sub>: Rolling Simple Moving Average (SMA) of S<sub>t</sub> over window w
+- σ<sub>t</sub>: Rolling Standard Deviation of S<sub>t</sub> over window w
+- k: Number of standard deviations (typically k=2)
+
+## Technical Architecture
+
+- Python 3.9+
+- Data: tvDatafeed (TradingView API)
+- Libraries: Pandas, Numpy, Matplotlib
